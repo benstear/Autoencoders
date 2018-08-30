@@ -1,0 +1,277 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "/Users/dawnstear/desktop/tensorflow_update/lib/python3.6/importlib/_bootstrap.py:219: RuntimeWarning: numpy.dtype size changed, may indicate binary incompatibility. Expected 96, got 88\n",
+      "  return f(*args, **kwds)\n",
+      "/Users/dawnstear/desktop/tensorflow_update/lib/python3.6/importlib/_bootstrap.py:219: RuntimeWarning: numpy.dtype size changed, may indicate binary incompatibility. Expected 96, got 88\n",
+      "  return f(*args, **kwds)\n"
+     ]
+    }
+   ],
+   "source": [
+    "import numpy as np\n",
+    "import tensorflow as tf\n",
+    "from tensorflow.contrib.slim import fully_connected as fc\n",
+    "import matplotlib.pyplot as plt \n",
+    "import pandas as pd\n",
+    "import utils\n",
+    "import matplotlib.pyplot as plt\n",
+    "#import VAE\n",
+    "import scedar as sce\n",
+    "\n",
+    "try: \n",
+    "    data,scdata\n",
+    "except:\n",
+    "    data  =  pd.read_csv('/Users/dawnstear/desktop/chop_cellpred/data.csv')\n",
+    "    sclabels = data['Labels']\n",
+    "    scdata = data.drop(['Labels','TYPE'],axis=1)\n",
+    "\n",
+    "DataObj = utils.Data(scdata,sclabels,drop_remainder=True)  \n",
+    "\n",
+    "assert not np.any(np.isnan(scdata))\n",
+    "assert not np.any(np.isnan(sclabels))\n",
+    "\n",
+    "maxval = np.amax(scdata)\n",
+    "scdata = (scdata+1e-7)/maxval\n",
+    "#print(np.shape(scdata))\n",
+    "#maxval = np.amax(scdata)\n",
+    "#scdata = np.divide(scdata,maxval)\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [
+    {
+     "ename": "NameError",
+     "evalue": "name 'np' is not defined",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mNameError\u001b[0m                                 Traceback (most recent call last)",
+      "\u001b[0;32m<ipython-input-1-4edf54a6c558>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 2\u001b[0;31m \u001b[0mn_cells\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mn_dims\u001b[0m\u001b[0;34m=\u001b[0m \u001b[0mnp\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mshape\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mscdata\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      3\u001b[0m \u001b[0mnum_sample\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mn_cells\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      4\u001b[0m \u001b[0minput_dim\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mn_dims\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0;31m#----------------------------------------------------#\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;31mNameError\u001b[0m: name 'np' is not defined"
+     ]
+    }
+   ],
+   "source": [
+    "\n",
+    "n_cells, n_dims= np.shape(scdata)\n",
+    "num_sample = n_cells \n",
+    "input_dim = n_dims   \n",
+    "#----------------------------------------------------#\n",
+    "\n",
+    "self.sess = tf.InteractiveSession()\n",
+    "self.sess.run(tf.global_variables_initializer())\n",
+    "\n",
+    "# Build the netowrk and the loss functions\n",
+    "def build(self):\n",
+    "    self.x = tf.placeholder(name='x', dtype=tf.float32, shape=[None, input_dim])\n",
+    "    n_hidden_f1 = 512\n",
+    "    n_hidden_f2 = 384\n",
+    "    n_hidden_f3 = 256\n",
+    "\n",
+    "    # Encode\n",
+    "    # x -> z_mean, z_sigma -> z\n",
+    "    f1 = fc(x, n_hidden_f1, scope='enc_fc1', activation_fn=tf.nn.elu,reuse=tf.AUTO_REUSE) # AUTOREUSE\n",
+    "    f2 = fc(f1, n_hidden_f2, scope='enc_fc2', activation_fn=tf.nn.elu,reuse=tf.AUTO_REUSE)\n",
+    "    f3 = fc(f2, n_hidden_f3, scope='enc_fc3', activation_fn=tf.nn.elu,reuse=tf.AUTO_REUSE)\n",
+    "\n",
+    "    self.z_mu = fc(f3, self.n_z, scope='enc_fc4_mu', activation_fn=None,reuse=tf.AUTO_REUSE)\n",
+    "    self.z_log_sigma_sq = fc(f3, self.n_z, scope='enc_fc4_sigma',reuse=tf.AUTO_REUSE, \n",
+    "                             activation_fn=None)\n",
+    "\n",
+    "    eps = tf.random_normal(shape=tf.shape(self.z_log_sigma_sq),\n",
+    "                           mean=0, stddev=1, dtype=tf.float32)\n",
+    "    self.z = self.z_mu + tf.sqrt(tf.exp(self.z_log_sigma_sq)) * eps\n",
+    "\n",
+    "    # Decode\n",
+    "    # z -> x_hat\n",
+    "    g1 = fc(self.z, n_hidden_f3, scope='dec_fc1', activation_fn=tf.nn.elu,reuse=tf.AUTO_REUSE)\n",
+    "    g2 = fc(g1, n_hidden_f2, scope='dec_fc2', activation_fn=tf.nn.elu,reuse=tf.AUTO_REUSE)\n",
+    "    g3 = fc(g2, n_hidden_f1, scope='dec_fc3', activation_fn=tf.nn.elu,reuse=tf.AUTO_REUSE)\n",
+    "    x_hat = fc(g3, input_dim, scope='dec_fc4', activation_fn=tf.sigmoid,reuse=tf.AUTO_REUSE)\n",
+    "\n",
+    "    # Loss: Reconstruction loss: Minimize the cross-entropy loss\n",
+    "    # H(x, x_hat) = -\\Sigma x*log(x_hat) + (1-x)*log(1-x_hat)\n",
+    "    epsilon = 1e-10\n",
+    "    recon_loss = -tf.reduce_sum(\n",
+    "    x * tf.log(epsilon+x_hat) + (1-x) * tf.log(epsilon+1-x_hat), \n",
+    "        axis=1)\n",
+    "    self.recon_loss = tf.reduce_mean(recon_loss)\n",
+    "\n",
+    "    # Latent loss\n",
+    "    # Kullback Leibler divergence: measure the difference between two distributions\n",
+    "    # Here we measure the divergence between the latent distribution and N(0, 1)\n",
+    "    latent_loss = -0.5 * tf.reduce_sum(\n",
+    "        1 + z_log_sigma_sq - tf.square(z_mu) - tf.exp(z_log_sigma_sq), axis=1)\n",
+    "    latent_loss = tf.reduce_mean(latent_loss)\n",
+    "    total_loss = tf.reduce_mean(recon_loss + latent_loss)\n",
+    "    train_op = tf.train.RMSPropOptimizer(\n",
+    "        learning_rate=learning_rate).minimize(total_loss)\n",
+    "    return\n",
+    "\n",
+    "# Execute the forward and the backward pass\n",
+    "def run_single_step(self, x):\n",
+    "    _, loss, recon_loss, latent_loss = self.sess.run(\n",
+    "        [self.train_op, self.total_loss, self.recon_loss, self.latent_loss],\n",
+    "        feed_dict={self.x: x}\n",
+    "    )\n",
+    "    return loss, recon_loss, latent_loss\n",
+    "# x -> x_hat\n",
+    "def reconstructor(self, x):\n",
+    "    x_hat = sess.run(x_hat, feed_dict={x: x})\n",
+    "    return x_hat\n",
+    "# z -> x\n",
+    "def generator(self, z):\n",
+    "    x_hat = sess.run(x_hat, feed_dict={z: z})\n",
+    "    return x_hat\n",
+    "# x -> z\n",
+    "def transformer(self, x):\n",
+    "    z = sess.run(z, feed_dict={x: x})\n",
+    "    return z\n",
+    "\n",
+    "#-------------------------------------#\n",
+    "        \n",
+    "def trainer(learning_rate=1e-3, batch_size=100, num_epoch=75, n_z=10):\n",
+    "\n",
+    "    lossvec = []\n",
+    "    recon_lossvec = []\n",
+    "    latent_lossvec = []\n",
+    "    \n",
+    "    with tf.Session() as sess:\n",
+    "        \n",
+    "        for epoch in range(num_epoch):\n",
+    "            for iter in range(num_sample // batch_size):\n",
+    "                \n",
+    "                batch = DataObj.train_batch(batch_size=batch_size)\n",
+    "\n",
+    "                \n",
+    "                loss, recon_loss, latent_loss = run_single_step(batch[0])\n",
+    "\n",
+    "            lossvec = np.append(lossvec,loss)\n",
+    "            recon_lossvec = np.append(recon_lossvec,recon_loss)\n",
+    "            latent_lossvec = np.append(latent_lossvec,latent_loss)   \n",
+    "\n",
+    "            if epoch % 5 == 0:\n",
+    "                print('[Epoch {}] Loss: {}, Recon loss: {}, Latent loss: {}'.format(\n",
+    "                    epoch, loss, recon_loss, latent_loss))\n",
+    "    \n",
+    "    # *--------------- Plot Results -------------------*   \n",
+    "    fig, ax = plt.subplots()\n",
+    "    ax.plot(range(num_epoch),lossvec)\n",
+    "    ax.plot(range(num_epoch),recon_lossvec)\n",
+    "    ax.plot(range(num_epoch),latent_lossvec)\n",
+    "    ax.set(xlabel='Epoch', ylabel='Loss',title='Loss Over Training Phase') # include time//epoch//batch size in title\n",
+    "    ax.grid()\n",
+    "    print('Done!')\n",
+    "    return model\n",
+    "\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "[Epoch 0] Loss: nan, Recon loss: nan, Latent loss: nan\n"
+     ]
+    },
+    {
+     "ename": "KeyboardInterrupt",
+     "evalue": "",
+     "output_type": "error",
+     "traceback": [
+      "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+      "\u001b[0;31mKeyboardInterrupt\u001b[0m                         Traceback (most recent call last)",
+      "\u001b[0;32m<ipython-input-3-0a69ed37e958>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0;31m# Train the model\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 2\u001b[0;31m \u001b[0mmodel\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mtrainer\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mlearning_rate\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m1e-8\u001b[0m\u001b[0;34m,\u001b[0m  \u001b[0mbatch_size\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m100\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mnum_epoch\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m26\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mn_z\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;36m2\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      3\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m<ipython-input-2-ed0297b0cf60>\u001b[0m in \u001b[0;36mtrainer\u001b[0;34m(learning_rate, batch_size, num_epoch, n_z)\u001b[0m\n\u001b[1;32m    100\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    101\u001b[0m             \u001b[0;31m# Execute the forward and the backward pass and report computed losses\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 102\u001b[0;31m             \u001b[0mloss\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mrecon_loss\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mlatent_loss\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mmodel\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mrun_single_step\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mbatch\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;36m0\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    103\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    104\u001b[0m         \u001b[0mlossvec\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mnp\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mappend\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mlossvec\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0mloss\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m<ipython-input-2-ed0297b0cf60>\u001b[0m in \u001b[0;36mrun_single_step\u001b[0;34m(self, x)\u001b[0m\n\u001b[1;32m     68\u001b[0m         _, loss, recon_loss, latent_loss = self.sess.run(\n\u001b[1;32m     69\u001b[0m             \u001b[0;34m[\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mtrain_op\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mtotal_loss\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mrecon_loss\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mlatent_loss\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m---> 70\u001b[0;31m             \u001b[0mfeed_dict\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;34m{\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mx\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mx\u001b[0m\u001b[0;34m}\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m     71\u001b[0m         )\n\u001b[1;32m     72\u001b[0m         \u001b[0;32mreturn\u001b[0m \u001b[0mloss\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mrecon_loss\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mlatent_loss\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/desktop/tensorflow_update/lib/python3.6/site-packages/tensorflow/python/client/session.py\u001b[0m in \u001b[0;36mrun\u001b[0;34m(self, fetches, feed_dict, options, run_metadata)\u001b[0m\n\u001b[1;32m    898\u001b[0m     \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    899\u001b[0m       result = self._run(None, fetches, feed_dict, options_ptr,\n\u001b[0;32m--> 900\u001b[0;31m                          run_metadata_ptr)\n\u001b[0m\u001b[1;32m    901\u001b[0m       \u001b[0;32mif\u001b[0m \u001b[0mrun_metadata\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    902\u001b[0m         \u001b[0mproto_data\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mtf_session\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mTF_GetBuffer\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mrun_metadata_ptr\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/desktop/tensorflow_update/lib/python3.6/site-packages/tensorflow/python/client/session.py\u001b[0m in \u001b[0;36m_run\u001b[0;34m(self, handle, fetches, feed_dict, options, run_metadata)\u001b[0m\n\u001b[1;32m   1133\u001b[0m     \u001b[0;32mif\u001b[0m \u001b[0mfinal_fetches\u001b[0m \u001b[0;32mor\u001b[0m \u001b[0mfinal_targets\u001b[0m \u001b[0;32mor\u001b[0m \u001b[0;34m(\u001b[0m\u001b[0mhandle\u001b[0m \u001b[0;32mand\u001b[0m \u001b[0mfeed_dict_tensor\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1134\u001b[0m       results = self._do_run(handle, final_targets, final_fetches,\n\u001b[0;32m-> 1135\u001b[0;31m                              feed_dict_tensor, options, run_metadata)\n\u001b[0m\u001b[1;32m   1136\u001b[0m     \u001b[0;32melse\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1137\u001b[0m       \u001b[0mresults\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0;34m[\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/desktop/tensorflow_update/lib/python3.6/site-packages/tensorflow/python/client/session.py\u001b[0m in \u001b[0;36m_do_run\u001b[0;34m(self, handle, target_list, fetch_list, feed_dict, options, run_metadata)\u001b[0m\n\u001b[1;32m   1314\u001b[0m     \u001b[0;32mif\u001b[0m \u001b[0mhandle\u001b[0m \u001b[0;32mis\u001b[0m \u001b[0;32mNone\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1315\u001b[0m       return self._do_call(_run_fn, feeds, fetches, targets, options,\n\u001b[0;32m-> 1316\u001b[0;31m                            run_metadata)\n\u001b[0m\u001b[1;32m   1317\u001b[0m     \u001b[0;32melse\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1318\u001b[0m       \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_do_call\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0m_prun_fn\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mhandle\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mfeeds\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mfetches\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/desktop/tensorflow_update/lib/python3.6/site-packages/tensorflow/python/client/session.py\u001b[0m in \u001b[0;36m_do_call\u001b[0;34m(self, fn, *args)\u001b[0m\n\u001b[1;32m   1320\u001b[0m   \u001b[0;32mdef\u001b[0m \u001b[0m_do_call\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mfn\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0;34m*\u001b[0m\u001b[0margs\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1321\u001b[0m     \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1322\u001b[0;31m       \u001b[0;32mreturn\u001b[0m \u001b[0mfn\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m*\u001b[0m\u001b[0margs\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1323\u001b[0m     \u001b[0;32mexcept\u001b[0m \u001b[0merrors\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mOpError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0me\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1324\u001b[0m       \u001b[0mmessage\u001b[0m \u001b[0;34m=\u001b[0m \u001b[0mcompat\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mas_text\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0me\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmessage\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/desktop/tensorflow_update/lib/python3.6/site-packages/tensorflow/python/client/session.py\u001b[0m in \u001b[0;36m_run_fn\u001b[0;34m(feed_dict, fetch_list, target_list, options, run_metadata)\u001b[0m\n\u001b[1;32m   1305\u001b[0m       \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_extend_graph\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1306\u001b[0m       return self._call_tf_sessionrun(\n\u001b[0;32m-> 1307\u001b[0;31m           options, feed_dict, fetch_list, target_list, run_metadata)\n\u001b[0m\u001b[1;32m   1308\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1309\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0m_prun_fn\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mhandle\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mfeed_dict\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mfetch_list\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;32m~/desktop/tensorflow_update/lib/python3.6/site-packages/tensorflow/python/client/session.py\u001b[0m in \u001b[0;36m_call_tf_sessionrun\u001b[0;34m(self, options, feed_dict, fetch_list, target_list, run_metadata)\u001b[0m\n\u001b[1;32m   1407\u001b[0m       return tf_session.TF_SessionRun_wrapper(\n\u001b[1;32m   1408\u001b[0m           \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_session\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0moptions\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mfeed_dict\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mfetch_list\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mtarget_list\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1409\u001b[0;31m           run_metadata)\n\u001b[0m\u001b[1;32m   1410\u001b[0m     \u001b[0;32melse\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1411\u001b[0m       \u001b[0;32mwith\u001b[0m \u001b[0merrors\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mraise_exception_on_not_ok_status\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0mstatus\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+      "\u001b[0;31mKeyboardInterrupt\u001b[0m: "
+     ]
+    }
+   ],
+   "source": [
+    "# Train the model\n",
+    "model = trainer(learning_rate=1e-8,  batch_size=100, num_epoch=26, n_z=2)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "range(0, 23)"
+      ]
+     },
+     "execution_count": 5,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "c = range(23)\n",
+    "c"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.6.4"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
